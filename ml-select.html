@@ -1,0 +1,169 @@
+<script type="text/javascript">
+    RED.nodes.registerType('ml-select', {
+        category: 'function',
+        color: '#71787e',
+        defaults: {
+            name: { value: "" },
+            class: { value: "" },
+            volume: { value: "" },
+            volume_change: { value: "" },
+            retrigger_window: { value: "" },
+            angle_of_arrival: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "light.png",
+        label: function () {
+            return this.name || "ml-select";
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="ml-select">
+
+    <style>
+        .slidecontainer {
+          width: 100%;
+        }
+        
+        .slider {
+          -webkit-appearance: none;
+          width: 100%;
+          height: 15px;
+          border-radius: 5px;
+          background: #d3d3d3;
+          outline: none;
+          opacity: 0.7;
+          -webkit-transition: .2s;
+          transition: opacity .2s;
+        }
+        
+        .slider:hover {
+          opacity: 1;
+        }
+        
+        .slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 25px;
+          height: 25px;
+          border-radius: 50%; 
+          background: #ad5e5e;
+          cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+          width: 25px;
+          height: 25px;
+          border-radius: 50%;
+          background: #ad5e5e;
+          cursor: pointer;
+        }
+        </style>
+        <input type="file" id="selectModel" value="Import" webkitdirectory mozdirectory />Model Folder<br />
+        <p>&nbsp</p>
+    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhen the robot recognizes...</p>
+    <div class="form-row">
+        <label for="node-input-class"><i class="fa fa-tags"></i> Class Name</label>
+        <select type="text" id="node-input-class" style="width: 250px;">
+            <option id="class1" value="1">Class 1</option>
+            <option id="class2" value="2">Class 2</option>
+            <option id="class3" value="3">Class 3</option>
+            <option id="class4" value="4">Class 4</option>
+        </select>
+    </div>
+    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAnd the sound is...</p>
+    <div class="form-row">
+        <label for="node-input-volume"><i class="fa fa-volume-up"></i> Loudness</label>
+        <select type="text" id="node-input-volume" style="width: 250px;">
+            <option value="vloud">Very Loud</option>
+            <option value="loud">Loud</option>
+            <option value="soft">Soft</option>
+            <option value="vsoft">Very Soft</option>
+        </select>
+    </div>
+    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhich is...</p>
+    <div class="form-row">
+        <label for="node-input-volume_change"><i class="fa fa-area-chart"></i> Loudness Rate of Change</label>
+        <select type="text" id="node-input-volume_change" style="width: 250px;">
+            <option value="floud">Getting Louder Fast</option>
+            <option value="sloud">Getting Louder Slow</option>
+            <option value="ssoft">Getting Softer Slow</option>
+            <option value="fsoft">Getting Softer Fast</option>
+        </select>
+    </div>
+    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspComing from...</p>
+    <div class="form-row">
+        <label for="node-input-angle_of_arrival"><i class="fa fa-circle-o"></i> Angle of Arrival</label>
+        <input id="node-input-angle_of_arrival" type="range" min="0" max="360" value="180" class="slider">
+    </div>
+    <p>Angle: <span id="anglevalue"></span>°</p>
+    <div class="form-row node-input-points-container-row">
+        <ol id="node-input-points-container"></ol>
+    </div>
+
+
+    <div class="form-row">
+        <label for="node-input-retrigger_window"><i class="fa fa-exclamation"></i> Retrigger Window</label>
+        <input id="node-input-retrigger_window" type="range" min="1" max="60" value="50" class="slider">
+    </div>
+    <p>Seconds: <span id="slidervalue"></span>s</p>
+
+
+    <div class="form-row node-input-points-container-row">
+        <ol id="node-input-points-container"></ol>
+    </div>
+    
+    <script>
+        var slider = document.getElementById("node-input-retrigger_window");
+        var output = document.getElementById("slidervalue");
+        output.innerHTML = slider.value;
+
+        slider.oninput = function () {
+            output.innerHTML = this.value;
+        }
+
+        var slider2 = document.getElementById("node-input-angle_of_arrival");
+        var output2 = document.getElementById("anglevalue");
+        output2.innerHTML = slider2.value;
+
+        slider2.oninput = function () {
+            output2.innerHTML = this.value;
+        }
+
+        document.getElementById("selectModel").addEventListener("change", function (event) {
+            let files = event.target.files;
+            for (let i = 0; i < files.length; i++) {
+
+                if (files[i].name === "metadata.json") {
+                    var fr = new FileReader();
+
+                    fr.onload = function (e) {
+                        console.log(e);
+                        var result = JSON.parse(e.target.result);
+                        var formatted = JSON.stringify(result, null, 2);
+                        for (i = 1; i <= result.wordLabels.length; i++) {
+                            let value = document.getElementById('class' + i).text = result.wordLabels[i - 1];
+                            if (!(value === undefined)) {
+                                document.getElementById('class' + i).text = result.wordLabels[i - 1];
+                            }
+                        }
+
+                    }
+
+                    fr.readAsText(files[i]);
+                }
+                else if (files[i].name === 'model.json') {
+
+                }
+                else if (files[i].name === 'weights.bin') {
+
+                }
+            };
+        }, false);
+    </script>
+</script>
+
+<script type="text/x-red" data-help-name="ml-select">
+    <p>A simple node that converts the message payloads into all lower-case characters</p>
+</script>
