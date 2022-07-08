@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Atul Gupta <atul7784@gmail.com> (https://atul3940.github.io/%22)",
+  "author": "Cooper Murr",
   "license": "MIT",
   "node-red": {
     "nodes": {

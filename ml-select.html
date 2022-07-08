@@ -8,13 +8,64 @@
             volume: { value: "" },
             volume_change: { value: "" },
             retrigger_window: { value: "" },
-            angle_of_arrival: { value: "" }
+            angle_of_arrival: { value: "" },
+            files: {value: []}
         },
         inputs: 1,
         outputs: 1,
         icon: "light.png",
         label: function () {
             return this.name || "ml-select";
+        },
+        oneditprepare: function() {
+        var slider = document.getElementById("node-input-retrigger_window");
+        const fileElement = document.getElementById("node-input-files");
+        var output = document.getElementById("slidervalue");
+        output.innerHTML = slider.value;
+
+        slider.oninput = function () {
+            output.innerHTML = this.value;
+        }
+
+        var slider2 = document.getElementById("node-input-angle_of_arrival");
+        var output2 = document.getElementById("anglevalue");
+        output2.innerHTML = slider2.value;
+
+        slider2.oninput = function () {
+            output2.innerHTML = this.value;
+        }
+
+        document.getElementById("selectModel").addEventListener("change", function (event) {
+            let files = event.target.files;
+            fileElement.value = files;
+            for (let i = 0; i < files.length; i++) {
+
+                if (files[i].name === "metadata.json") {
+                    var fr = new FileReader();
+
+                    fr.onload = function (e) {
+                        console.log(e);
+                        var result = JSON.parse(e.target.result);
+                        var formatted = JSON.stringify(result, null, 2);
+                        for (i = 1; i <= result.wordLabels.length; i++) {
+                            let value = document.getElementById('class' + i).text = result.wordLabels[i - 1];
+                            if (!(value === undefined)) {
+                                document.getElementById('class' + i).text = result.wordLabels[i - 1];
+                            }
+                        }
+
+                    }
+
+                    fr.readAsText(files[i]);
+                }
+                else if (files[i].name === 'model.json') {
+
+                }
+                else if (files[i].name === 'weights.bin') {
+
+                }
+            };
+        }, false);
         }
     });
 </script>
@@ -25,7 +76,10 @@
         .slidecontainer {
           width: 100%;
         }
-        
+        .files{
+            display: none;
+            position: absolute;
+        }
         .slider {
           -webkit-appearance: none;
           width: 100%;
@@ -98,10 +152,6 @@
         <input id="node-input-angle_of_arrival" type="range" min="0" max="360" value="180" class="slider">
     </div>
     <p>Angle: <span id="anglevalue"></span>°</p>
-    <div class="form-row node-input-points-container-row">
-        <ol id="node-input-points-container"></ol>
-    </div>
-
 
     <div class="form-row">
         <label for="node-input-retrigger_window"><i class="fa fa-exclamation"></i> Retrigger Window</label>
@@ -110,12 +160,14 @@
     <p>Seconds: <span id="slidervalue"></span>s</p>
 
 
-    <div class="form-row node-input-points-container-row">
-        <ol id="node-input-points-container"></ol>
+    <div class="form-row">
+        <input type="hidden" id="node-input-files" placeholder="" class="files">
     </div>
-    
+
+
     <script>
-        var slider = document.getElementById("node-input-retrigger_window");
+       /*  var slider = document.getElementById("node-input-retrigger_window");
+        const fileElement = document.getElementById("node-input-files");
         var output = document.getElementById("slidervalue");
         output.innerHTML = slider.value;
 
@@ -133,6 +185,7 @@
 
         document.getElementById("selectModel").addEventListener("change", function (event) {
             let files = event.target.files;
+            fileElement.value = files;
             for (let i = 0; i < files.length; i++) {
 
                 if (files[i].name === "metadata.json") {
@@ -160,7 +213,7 @@
 
                 }
             };
-        }, false);
+        }, false); */
     </script>
 </script>
 
