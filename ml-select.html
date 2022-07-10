@@ -1,9 +1,10 @@
 <script type="text/javascript">
+    let pythonHandler = null;
     RED.nodes.registerType('ml-select', {
         category: 'function',
         color: '#71787e',
         defaults: {
-            name: { value: "" },
+            name: { value: "not modified yet" },
             class: { value: "" },
             volume: { value: "" },
             volume_change: { value: "" },
@@ -114,6 +115,10 @@
           cursor: pointer;
         }
         </style>
+        <div class="form-row">
+            <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+            <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+        </div>
         <input type="file" id="selectModel" value="Import" webkitdirectory mozdirectory />Model Folder<br />
         <p>&nbsp</p>
     <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhen the robot recognizes...</p>
