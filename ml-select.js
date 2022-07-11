@@ -41,16 +41,15 @@ module.exports = function (RED) {
         node.on('close', function () {
             clearInterval(id);
             node.warn("Closed this Node")
-            node.warn("Child is not null: " + (!child===null))
             node.warn("Child is running: " + childRunning)
-            if (!child === null && childRunning) {
+            if (!(child == null) && childRunning) {
                 node.warn("Child is not null and child is Running")
                 child.kill();
                 child = null;
                 childRunning = false;
                 pythonRunning = false;
             }
-            else if(!child === null && !childRunning)
+            else if(!child ==null && !childRunning)
             {
                 node.warn("Child is not null and child is not Running")
                 pythonRunning = false;
