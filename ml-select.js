@@ -5,36 +5,54 @@ module.exports = function (RED) {
     let pythonRunning = false;
 
     function MlSelect(config) {
+        let childRunning = false;
         let child = null;
-        setInterval(() => {
+        const id = setInterval(() => {
             if (!pythonRunning) {
+                
+                node.warn("Spawning Child")
                 pythonRunning = true;
                 child = spawn('python', ['test.py']);
+                child.on('exit', (code) => {
+                    node.warn("Child Closed Itself")
+                    childRunning = false;
+                });
+                childRunning = true;
                 child.stdout.on('data', data => {
                     node.warn(`stderr: ${data}`);
-                    const floatArray = new Float32Array(data.buffer);
-                    sharedPythonBuffer.push(floatArray[0]);
+                    sharedPythonBuffer.push(data);
+
                 });
             }
-        }, 250)
+            else {
+                node.warn("I did not spawn a child process")
+            }
+        }, 5000)
 
         RED.nodes.createNode(this, config);
         var node = this;
 
         node.on('input', function (msg) {
-            if (boolFlag) {
-                testString = config.name;
-                boolFlag = false;
-            }
-            msg.testsString = testString;
             msg.pythonBuffer = sharedPythonBuffer;
             node.send(msg);
         });
 
+
         node.on('close', function () {
-            if (child) {
+            clearInterval(id);
+            node.warn("Closed this Node")
+            node.warn("Child is not null: " + (!child===null))
+            node.warn("Child is running: " + childRunning)
+            if (!child === null && childRunning) {
+                node.warn("Child is not null and child is Running")
                 child.kill();
                 child = null;
+                childRunning = false;
+                pythonRunning = false;
+            }
+            else if(!child === null && !childRunning)
+            {
+                node.warn("Child is not null and child is not Running")
                 pythonRunning = false;
             }
         });
