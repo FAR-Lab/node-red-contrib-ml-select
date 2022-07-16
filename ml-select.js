@@ -24,14 +24,17 @@ module.exports = function (RED) {
     function MlSelect(config) {
         RED.nodes.createNode(this, config);
         var node = this;
+
+
+
+
         function ProcessData() {
             let trigger = false;
             Data = sharedPythonBuffer.split(',');
             detectedClass = Data[0]
             DOA = Data[1]
             volume = Data[2]
-
-            switch (config.node - input - volume) {
+            switch (config.volume) {
                 case vloud:
                     if (volume > 3000) {
                         trigger = true;
@@ -87,10 +90,16 @@ module.exports = function (RED) {
 
 
 
+let interfavelHandle = setInterval(() => {
+    ProcessData();
+    
+}, config.retrigger_window);
 
         node.on('close', function () {
-
+            close
         });
+
+
     }
 
 
