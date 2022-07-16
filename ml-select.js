@@ -19,7 +19,7 @@ module.exports = function (RED) {
         });
     }
 
-
+    StartChild();
 
     function MlSelect(config) {
         RED.nodes.createNode(this, config);
@@ -31,18 +31,22 @@ module.exports = function (RED) {
         function ProcessData() {
             let trigger = false;
             Data = sharedPythonBuffer.split(',');
+            if(Data.length!=3){
+                node.warn("Not the correct buffer yet")
+                return;
+            }
             detectedClass = Data[0]
-            DOA = Data[1]
-            volume = Data[2]
+            DOA = Number(Data[2])
+            volume = Number(Data[1])
             switch (config.volume) {
-                case vloud:
+                case "vloud":
                     if (volume > 3000) {
                         trigger = true;
                     } else {
                         trigger = false;
                     }
                     break;
-                case loud:
+                case "loud":
                     if (volume > 1500 && volume <= 3000) {
                         trigger = true;
                     } else {
@@ -50,21 +54,21 @@ module.exports = function (RED) {
                     }
                     break;
 
-                case soft:
+                case "soft":
                     if (volume > 500 && volume <= 1500) {
                         trigger = true;
                     } else {
                         trigger = false;
                     }
                     break;
-                case vsoft:
+                case "vsoft":
                     if (volume <= 500) {
                         trigger = true;
                     } else {
                         trigger = false;
                     }
                     break;
-                case any:
+                case "any":
                     trigger = true;
                     break;
 
@@ -74,6 +78,8 @@ module.exports = function (RED) {
 
             if (trigger) {
                 node.send({ payload: 'go' });
+            }else{
+                
             }
 
         }
@@ -81,6 +87,7 @@ module.exports = function (RED) {
 
         node.on('input', function (msg) {
             if (child === null) {
+                node.warn("Starting a new child as it was NULL");
                 StartChild();
             } else {
                 ProcessData();
@@ -91,12 +98,15 @@ module.exports = function (RED) {
 
 
 let interfavelHandle = setInterval(() => {
+    
+    
+    
     ProcessData();
     
-}, config.retrigger_window);
+}, config.retrigger_window*1000);
 
         node.on('close', function () {
-            close
+            clearInterval(interfavelHandle)
         });
 
 
