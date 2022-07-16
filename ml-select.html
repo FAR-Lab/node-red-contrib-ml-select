@@ -4,7 +4,6 @@
         category: 'function',
         color: '#71787e',
         defaults: {
-            name: { value: "not modified yet" },
             class: { value: "" },
             volume: { value: "" },
             volume_change: { value: "" },
@@ -139,6 +138,7 @@
             <option value="loud">Loud</option>
             <option value="soft">Soft</option>
             <option value="vsoft">Very Soft</option>
+            <option value="any">Not relevant</option>
         </select>
     </div>
     <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhich is...</p>
@@ -149,6 +149,7 @@
             <option value="sloud">Getting Louder Slow</option>
             <option value="ssoft">Getting Softer Slow</option>
             <option value="fsoft">Getting Softer Fast</option>
+            <option value="any">Not relevant</option>
         </select>
     </div>
     <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspComing from...</p>
@@ -160,7 +161,7 @@
 
     <div class="form-row">
         <label for="node-input-retrigger_window"><i class="fa fa-exclamation"></i> Retrigger Window</label>
-        <input id="node-input-retrigger_window" type="range" min="1" max="60" value="50" class="slider">
+        <input id="node-input-retrigger_window" type="range" min="1" max="60" value="30" class="slider">
     </div>
     <p>Seconds: <span id="slidervalue"></span>s</p>
 

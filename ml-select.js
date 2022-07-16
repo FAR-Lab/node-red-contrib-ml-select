@@ -1,48 +1,95 @@
 const { spawn } = require('child_process');
-
 module.exports = function (RED) {
-    
-    let pythonRunning = true;
-    let sharedPythonBuffer = ""
-    let child = spawn('python3', ['test.py']);
 
-    child.stdout.on('data', data => {
-        sharedPythonBuffer=data.toString();
-        
-    });
-    child.on('exit', (code) => {
-        pythonRunning = false;
-        console.log("We are closing, something broke",code)
-    });
+
+    let sharedPythonBuffer = ""
+    let child = null
+    function StartChild() {
+        let child = spawn('python3', ['/home/pi/custom-nodes/node-red-contrib-ml-select/AudioDetectionDeamon/AudioDeamon.py']); // ToDo: this is VERY ugly needs to be changed 
+        child.stdout.on('data', data => {
+            sharedPythonBuffer = data.toString();
+        });
+        child.stderr.on('data', data => {
+            console.log("Error", data.toString())
+        });
+        child.on('exit', (code) => {
+
+            console.log("We are closing, something broke", code)
+            child = null;
+        });
+    }
 
 
 
     function MlSelect(config) {
-        let childRunning = false;
-        let child = null;
-
         RED.nodes.createNode(this, config);
         var node = this;
+        function ProcessData() {
+            let trigger = false;
+            Data = sharedPythonBuffer.split(',');
+            detectedClass = Data[0]
+            DOA = Data[1]
+            volume = Data[2]
+
+            switch (config.node - input - volume) {
+                case vloud:
+                    if (volume > 3000) {
+                        trigger = true;
+                    } else {
+                        trigger = false;
+                    }
+                    break;
+                case loud:
+                    if (volume > 1500 && volume <= 3000) {
+                        trigger = true;
+                    } else {
+                        trigger = false;
+                    }
+                    break;
+
+                case soft:
+                    if (volume > 500 && volume <= 1500) {
+                        trigger = true;
+                    } else {
+                        trigger = false;
+                    }
+                    break;
+                case vsoft:
+                    if (volume <= 500) {
+                        trigger = true;
+                    } else {
+                        trigger = false;
+                    }
+                    break;
+                case any:
+                    trigger = true;
+                    break;
+
+                default:
+                    break;
+            }
+
+            if (trigger) {
+                node.send({ payload: 'go' });
+            }
+
+        }
+
 
         node.on('input', function (msg) {
-            msg.payload = sharedPythonBuffer;
-            node.send(msg);
+            if (child === null) {
+                StartChild();
+            } else {
+                ProcessData();
+            }
         });
 
 
+
+
+
         node.on('close', function () {
-            
-            if (pythonRunning) {
-                node.warn("Child is not null and child is Running")
-                try {
-                    child.kill();
-                    child = null;
-                } catch (error) {
-                    console.log("Was trying to kill the child but it faild.")
-                }
-                
-                pythonRunning = false;
-            }
+
         });
     }
 
