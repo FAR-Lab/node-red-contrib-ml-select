@@ -2,10 +2,18 @@ const { spawn } = require('child_process');
 module.exports = function (RED) {
 
 
-    let sharedPythonBuffer = ""
-    let child = null
+    let sharedPythonBuffer = "";
+    let child = null;
+
     function StartChild() {
-        let child = spawn('python3', ['/home/pi/custom-nodes/node-red-contrib-ml-select/AudioDetectionDeamon/AudioDeamon.py']); // ToDo: this is VERY ugly needs to be changed 
+        if (child != null && child?.exitCode
+            == null) {
+            console.log("Killing the current child.")
+            child.kill()
+            child = null;
+        }
+
+        child = spawn('python3', ['/home/pi/custom-nodes/node-red-contrib-ml-select/AudioDetectionDeamon/AudioDeamon.py']); // ToDo: this is VERY ugly needs to be changed 
         child.stdout.on('data', data => {
             sharedPythonBuffer = data.toString();
         });
@@ -31,7 +39,7 @@ module.exports = function (RED) {
         function ProcessData() {
             let trigger = false;
             Data = sharedPythonBuffer.split(',');
-            if(Data.length!=3){
+            if (Data.length != 3) {
                 node.warn("Not the correct buffer yet")
                 return;
             }
@@ -78,16 +86,17 @@ module.exports = function (RED) {
 
             if (trigger) {
                 node.send({ payload: 'go' });
-            }else{
-                
+            } else {
+
             }
 
         }
 
 
         node.on('input', function (msg) {
-            if (child === null) {
-                node.warn("Starting a new child as it was NULL");
+            if (child == null || (child != null && child.exitCode != null)) {
+                node.warn("Starting a new child as it was NULL or had died!");
+
                 StartChild();
             } else {
                 ProcessData();
@@ -97,13 +106,13 @@ module.exports = function (RED) {
 
 
 
-let interfavelHandle = setInterval(() => {
-    
-    
-    
-    ProcessData();
-    
-}, config.retrigger_window*1000);
+        let interfavelHandle = setInterval(() => {
+
+
+
+            ProcessData();
+
+        }, config.retrigger_window * 1000);
 
         node.on('close', function () {
             clearInterval(interfavelHandle)
