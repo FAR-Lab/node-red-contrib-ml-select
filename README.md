@@ -21,6 +21,8 @@
  * change angle selection to 4 (or 5) buttons `Left` `Front`  `Right` `behind` maybe `any`
  * Restart python child after uploading a new model file.
  * Show the childs process state in the node-red interface  
+
+
 **Should:**
  * name everything corectly 
  * remove unwanted nodes 
