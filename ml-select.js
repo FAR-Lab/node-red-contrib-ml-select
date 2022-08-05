@@ -1,10 +1,14 @@
+const { notEqual } = require('assert');
 const { spawn } = require('child_process');
+const CircularBuffer = require('circular-buffer');
 module.exports = function (RED) {
 
 
     let sharedPythonBuffer = "";
     let child = null;
-
+    let avgVolumeChange = 0;
+    let volumeIndex = 0;
+    let volumeRingBuffer = new CircularBuffer(50);
     function StartChild() {
         if (child != null && child?.exitCode
             == null) {
@@ -13,7 +17,7 @@ module.exports = function (RED) {
             child = null;
         }
 
-        child = spawn('python3', ['/home/pi/custom-nodes/node-red-contrib-ml-select/AudioDetectionDeamon/AudioDeamon.py']); // ToDo: this is VERY ugly needs to be changed 
+        child = spawn('python3', [__dirname + '/AudioDetectionDeamon/AudioDeamon.py']); // ToDo: this is VERY ugly needs to be changed 
         child.stdout.on('data', data => {
             sharedPythonBuffer = data.toString();
         });
@@ -26,26 +30,58 @@ module.exports = function (RED) {
             child = null;
         });
     }
-
+    function currentAvg()
+    {
+        let sum = 0;
+        let count = 0;
+        for(let i = 1; i < volumeRingBuffer.size(); i++)
+        {
+            let ind1, vol1 = volumeRingBuffer.get(i-1);
+            let ind2, vol2 = volumeRingBuffer.get(i);
+    
+            let diff = vol2 - vol1;
+            if(ind2 < ind1)
+            {
+                continue;
+            }
+            else
+            {
+                sum += diff;
+                count++;
+            }
+        }
+        if(sum === 0 || count === 0)
+        {
+            return avgVolumeChange;
+        }
+        return sum / count;
+    }
     StartChild();
 
     function MlSelect(config) {
+
         RED.nodes.createNode(this, config);
         var node = this;
-
-
-
-
+        let metadata = JSON.parse(config.metadataJSON);
+        let model = JSON.parse(config.modelJSON);
+        let labels = metadata.wordLabels;
+        
         function ProcessData() {
             let trigger = false;
+            let files = config.files;
             Data = sharedPythonBuffer.split(',');
             if (Data.length != 3) {
-                node.warn("Not the correct buffer yet")
+                //node.warn("Not the correct buffer yet")
                 return;
             }
-            detectedClass = Data[0]
-            DOA = Number(Data[2])
-            volume = Number(Data[1])
+            let detectedClass = Data[0]
+            let DOA = Number(Data[2])
+            let volume = Number(Data[1])
+            volumeRingBuffer.enq([volumeIndex, volume]);
+            volumeIndex++;
+            
+            avgVolumeChange = currentAvg();
+
             switch (config.volume) {
                 case "vloud":
                     if (volume > 3000) {
@@ -83,6 +119,28 @@ module.exports = function (RED) {
                 default:
                     break;
             }
+            trigger = trigger && (config.class === detectedClass)
+            
+            switch(config.volume_change)
+            {
+                case "sloud":
+                case "ssoft":
+                    trigger = trigger && (Math.abs(avgVolumeChange) > 10)
+                    break;
+                case "fsoft":
+                case "floud":
+                    trigger = trigger && (Math.abs(avgVolumeChange) > 50)
+                    break;
+                case "any":
+                    trigger = trigger && true
+                    break;
+            }
+            let doaCheck = (((config.left === "true") && (DOA <= 180 && DOA >= 0)) || 
+            ((config.right === "true") && (DOA <= 0 && DOA >= 180)) ||
+            ((config.front === "true") && (DOA <= 60 && DOA >= 300)) ||
+            ((config.back === "true") && (DOA <= 225 && DOA >= 135)));
+            
+            trigger = trigger && doaCheck;
 
             if (trigger) {
                 node.send({ payload: 'go' });
@@ -90,7 +148,7 @@ module.exports = function (RED) {
 
             }
 
-        }
+    
 
 
         node.on('input', function (msg) {
@@ -116,16 +174,19 @@ module.exports = function (RED) {
 
         node.on('close', function () {
             clearInterval(interfavelHandle)
+            config.files = []
+            volumeIndex = 0;
+            
         });
 
 
-    }
+    }}
 
 
 
     RED.nodes.registerType("ml-select", MlSelect, {
         settings: {
-            sampleNodeColour: {
+            mlSelect: {
                 value: "red",
                 exportable: true
             }
