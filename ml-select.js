@@ -1,4 +1,6 @@
 const { spawn } = require('child_process');
+const path = require('path');
+
 module.exports = function (RED) {
 
 
@@ -13,9 +15,10 @@ module.exports = function (RED) {
             child = null;
         }
 
-        child = spawn('python3', ['/home/pi/custom-nodes/node-red-contrib-ml-select/AudioDetectionDeamon/AudioDeamon.py']); // ToDo: this is VERY ugly needs to be changed 
+        child = spawn('python3', [path.join(__dirname,'/AudioDetectionDeamon/AudioDeamon.py')]); // ToDo: this is VERY ugly needs to be changed 
         child.stdout.on('data', data => {
             sharedPythonBuffer = data.toString();
+            console.log("got Data updated SharedBuffer")
         });
         child.stderr.on('data', data => {
             console.log("Error", data.toString())
@@ -40,7 +43,7 @@ module.exports = function (RED) {
             let trigger = false;
             Data = sharedPythonBuffer.split(',');
             if (Data.length != 3) {
-                node.warn("Not the correct buffer yet")
+                //node.warn("Not the correct buffer yet"+Data.length.toString())
                 return;
             }
             detectedClass = Data[0]
