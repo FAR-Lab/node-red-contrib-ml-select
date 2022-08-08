@@ -12,5 +12,8 @@
     "nodes": {
       "ml-select": "ml-select.js"
     }
+  },
+  "dependencies": {
+    "circular-buffer": "^1.0.3"
   }
 }

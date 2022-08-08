@@ -8,8 +8,14 @@
             volume: { value: "" },
             volume_change: { value: "" },
             retrigger_window: { value: "" },
-            angle_of_arrival: { value: "" },
-            files: {value: []}
+            left: { value: "" },
+            right: { value: "" },
+            front: { value: "" },
+            back: { value: "" },
+            modelJSON: {value: ""},
+            metadataJSON: {value: ""},
+            weightsBin:{value: []},
+            files: { value: [] }
         },
         inputs: 1,
         outputs: 1,
@@ -17,55 +23,69 @@
         label: function () {
             return this.name || "ml-select";
         },
-        oneditprepare: function() {
-        var slider = document.getElementById("node-input-retrigger_window");
-        const fileElement = document.getElementById("node-input-files");
-        var output = document.getElementById("slidervalue");
-        output.innerHTML = slider.value;
+        oneditprepare: function () {
+            var slider = document.getElementById("node-input-retrigger_window");
+            const fileElement = document.getElementById("node-input-files");
+            const modelJSONElement = document.getElementById("node-input-modelJSON");
+            const weightsBinElement = document.getElementById("node-input-weightsBin");
+            const metadataJSONElement = document.getElementById("node-input-metadataJSON");
+            var output = document.getElementById("slidervalue");
+            output.innerHTML = slider.value;
 
-        slider.oninput = function () {
-            output.innerHTML = this.value;
-        }
+            slider.oninput = function () {
+                output.innerHTML = this.value;
+            }
 
-        var slider2 = document.getElementById("node-input-angle_of_arrival");
-        var output2 = document.getElementById("anglevalue");
-        output2.innerHTML = slider2.value;
+            document.getElementById("selectModel").addEventListener("change", function (event) {
+                let files = event.target.files;
+                let outputJSON = [];
+                for (let i = 0; i < files.length; i++) {
+                    switch (files[i].name) {
+                        case "metadata.json":
+                            var fr = new FileReader();
+                            fr.onload = function (e) {
+                                console.log(e);
+                                var result = JSON.parse(e.target.result);
+                                var formatted = JSON.stringify(result, null, 2);
+                                metadataJSONElement.value = formatted;
+                                for (i = 1; i <= result.wordLabels.length; i++) {
+                                    let value = document.getElementById('class' + i).text = result.wordLabels[i - 1];
+                                    if (!(value === undefined)) {
+                                        document.getElementById('class' + i).text = result.wordLabels[i - 1];
+                                    }
+                                }
 
-        slider2.oninput = function () {
-            output2.innerHTML = this.value;
-        }
-
-        document.getElementById("selectModel").addEventListener("change", function (event) {
-            let files = event.target.files;
-            fileElement.value = files;
-            for (let i = 0; i < files.length; i++) {
-
-                if (files[i].name === "metadata.json") {
-                    var fr = new FileReader();
-
-                    fr.onload = function (e) {
-                        console.log(e);
-                        var result = JSON.parse(e.target.result);
-                        var formatted = JSON.stringify(result, null, 2);
-                        for (i = 1; i <= result.wordLabels.length; i++) {
-                            let value = document.getElementById('class' + i).text = result.wordLabels[i - 1];
-                            if (!(value === undefined)) {
-                                document.getElementById('class' + i).text = result.wordLabels[i - 1];
                             }
-                        }
+                            
+                            fr.readAsText(files[i]);
+                            break;
+                        case "model.json":
+                            var fr = new FileReader();
+                            fr.onload = function (e) {
+                                console.log(e);
+                                var result = JSON.parse(e.target.result);
+                                var formatted = JSON.stringify(result, null, 2);
+                             
+                                modelJSONElement.value = formatted;
+                            }
+                            fr.readAsText(files[i]);
+                            break;
 
+                         case "model.weights.bin":
+                            fileElement.value = files[i]
+                            var fr = new FileReader();
+                            fr.onload = function (e) {
+                                console.log(e);
+                                weightsBinElement.value = e.target.result
+                                weightsBinElement.value = formatted;
+                            }
+                            fr.readAsText(files[i]);
+                            break; 
                     }
+                };
 
-                    fr.readAsText(files[i]);
-                }
-                else if (files[i].name === 'model.json') {
-
-                }
-                else if (files[i].name === 'weights.bin') {
-
-                }
-            };
-        }, false);
+                
+            }, false);
         }
     });
 </script>
@@ -114,13 +134,9 @@
           cursor: pointer;
         }
         </style>
-        <div class="form-row">
-            <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
-            <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
-        </div>
-        <input type="file" id="selectModel" value="Import" webkitdirectory mozdirectory />Model Folder<br />
+        <input type="file" id="selectModel" value="Import" webkitdirectory multiple />Model Folder<br />
         <p>&nbsp</p>
-    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhen the robot recognizes...</p>
+    <b>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhen the robot recognizes...</b>
     <div class="form-row">
         <label for="node-input-class"><i class="fa fa-tags"></i> Class Name</label>
         <select type="text" id="node-input-class" style="width: 250px;">
@@ -130,7 +146,7 @@
             <option id="class4" value="4">Class 4</option>
         </select>
     </div>
-    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAnd the sound is...</p>
+    <b>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAnd the sound is...</b>
     <div class="form-row">
         <label for="node-input-volume"><i class="fa fa-volume-up"></i> Loudness</label>
         <select type="text" id="node-input-volume" style="width: 250px;">
@@ -141,7 +157,7 @@
             <option value="any">Not relevant</option>
         </select>
     </div>
-    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhich is...</p>
+    <b>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspWhich is...</b>
     <div class="form-row">
         <label for="node-input-volume_change"><i class="fa fa-area-chart"></i> Loudness Rate of Change</label>
         <select type="text" id="node-input-volume_change" style="width: 250px;">
@@ -152,12 +168,17 @@
             <option value="any">Not relevant</option>
         </select>
     </div>
-    <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspComing from...</p>
+    <b>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspComing from...</b>
     <div class="form-row">
-        <label for="node-input-angle_of_arrival"><i class="fa fa-circle-o"></i> Angle of Arrival</label>
-        <input id="node-input-angle_of_arrival" type="range" min="0" max="360" value="180" class="slider">
+        <label for="node-input-left"><i class="fa fa-angle-left"></i></i> Left</label>
+        <input type="checkbox" id="node-input-left" value="left">
+        <label for="node-input-right"><i class="fa fa-angle-right"></i></i> Right</label>
+        <input type="checkbox" id="node-input-right" value="right">
+        <label for="node-input-front"><i class="fa fa-angle-up"></i></i> Front</label>
+        <input type="checkbox" id="node-input-front" value="front">
+        <label for="node-input-back"><i class="fa fa-angle-down"></i></i> Back</label>
+        <input type="checkbox" id="node-input-back" value="back">
     </div>
-    <p>Angle: <span id="anglevalue"></span>°</p>
 
     <div class="form-row">
         <label for="node-input-retrigger_window"><i class="fa fa-exclamation"></i> Retrigger Window</label>
@@ -169,58 +190,15 @@
     <div class="form-row">
         <input type="hidden" id="node-input-files" placeholder="" class="files">
     </div>
-
-
-    <script>
-       /*  var slider = document.getElementById("node-input-retrigger_window");
-        const fileElement = document.getElementById("node-input-files");
-        var output = document.getElementById("slidervalue");
-        output.innerHTML = slider.value;
-
-        slider.oninput = function () {
-            output.innerHTML = this.value;
-        }
-
-        var slider2 = document.getElementById("node-input-angle_of_arrival");
-        var output2 = document.getElementById("anglevalue");
-        output2.innerHTML = slider2.value;
-
-        slider2.oninput = function () {
-            output2.innerHTML = this.value;
-        }
-
-        document.getElementById("selectModel").addEventListener("change", function (event) {
-            let files = event.target.files;
-            fileElement.value = files;
-            for (let i = 0; i < files.length; i++) {
-
-                if (files[i].name === "metadata.json") {
-                    var fr = new FileReader();
-
-                    fr.onload = function (e) {
-                        console.log(e);
-                        var result = JSON.parse(e.target.result);
-                        var formatted = JSON.stringify(result, null, 2);
-                        for (i = 1; i <= result.wordLabels.length; i++) {
-                            let value = document.getElementById('class' + i).text = result.wordLabels[i - 1];
-                            if (!(value === undefined)) {
-                                document.getElementById('class' + i).text = result.wordLabels[i - 1];
-                            }
-                        }
-
-                    }
-
-                    fr.readAsText(files[i]);
-                }
-                else if (files[i].name === 'model.json') {
-
-                }
-                else if (files[i].name === 'weights.bin') {
-
-                }
-            };
-        }, false); */
-    </script>
+    <div class="form-row">
+        <input type="hidden" id="node-input-metadataJSON" placeholder="" class="files">
+    </div>
+    <div class="form-row">
+        <input type="hidden" id="node-input-modelJSON" placeholder="" class="files">
+    </div>
+    <div class="form-row">
+        <input type="hidden" id="node-input-weightsBin" placeholder="" class="files">
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="ml-select">
