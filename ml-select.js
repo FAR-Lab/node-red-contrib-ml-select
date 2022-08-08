@@ -1,16 +1,14 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
-const CircularBuffer = require('circular-buffer');
+
 
 module.exports = function (RED) {
 
 
     let sharedPythonBuffer = "";
     let child = null;
-    let avgVolumeChange = 0;
-    let volumeIndex = 0;
-    let volumeRingBuffer = new CircularBuffer(50);
+   
     function StartChild() {
         if (child != null && child?.exitCode
             == null) {
@@ -23,7 +21,7 @@ module.exports = function (RED) {
 
         child.stdout.on('data', data => {
             sharedPythonBuffer = data.toString();
-            console.log("got Data updated SharedBuffer")
+            //console.log("got Data updated SharedBuffer")
         });
         child.stderr.on('data', data => {
             console.log("Error", data.toString())
@@ -34,32 +32,7 @@ module.exports = function (RED) {
             child = null;
         });
     }
-    function currentAvg()
-    {
-        let sum = 0;
-        let count = 0;
-        for(let i = 1; i < volumeRingBuffer.size(); i++)
-        {
-            let ind1, vol1 = volumeRingBuffer.get(i-1);
-            let ind2, vol2 = volumeRingBuffer.get(i);
     
-            let diff = vol2 - vol1;
-            if(ind2 < ind1)
-            {
-                continue;
-            }
-            else
-            {
-                sum += diff;
-                count++;
-            }
-        }
-        if(sum === 0 || count === 0)
-        {
-            return avgVolumeChange;
-        }
-        return sum / count;
-    }
     StartChild();
 
     function MlSelect(config) {
@@ -80,10 +53,9 @@ module.exports = function (RED) {
             let detectedClass = Data[0]
             let DOA = Number(Data[2])
             let volume = Number(Data[1])
-            volumeRingBuffer.enq([volumeIndex, volume]);
-            volumeIndex++;
             
-            avgVolumeChange = currentAvg();
+            
+           
 
             switch (config.volume) {
                 case "vloud":
