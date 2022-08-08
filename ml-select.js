@@ -47,13 +47,13 @@ module.exports = function (RED) {
             let trigger = false;
             let files = config.files;
             Data = sharedPythonBuffer.split(',');
-            if (Data.length != 3) {
+            if (Data.length != 4) {
                 return;
             }
             let detectedClass = Data[0]
             let DOA = Number(Data[2])
             let volume = Number(Data[1])
-            
+            let volumechange = Number(Data[3])
             
            
 
@@ -99,12 +99,15 @@ module.exports = function (RED) {
             switch(config.volume_change)
             {
                 case "sloud":
+                    trigger = trigger && (volumechange > 10)
+                    break
                 case "ssoft":
-                    trigger = trigger && (Math.abs(avgVolumeChange) > 10)
+                    trigger = trigger && (volumechange < -10)
                     break;
                 case "fsoft":
+                    trigger = trigger && (volumechange < -50)
                 case "floud":
-                    trigger = trigger && (Math.abs(avgVolumeChange) > 50)
+                    trigger = trigger && (volumechange > 50)
                     break;
                 case "any":
                     trigger = trigger && true
