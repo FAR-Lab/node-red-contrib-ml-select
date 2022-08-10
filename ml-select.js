@@ -1,14 +1,28 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs')
+const express = require('express');
+const app = express();
+const { createServer } = require("http");
+const { Server } = require("socket.io");
 
 
 module.exports = function (RED) {
 
+    const app = express();
+    const httpServer = createServer();
+    const io = new Server(httpServer, { /* options */ });
+
+    io.on("connection", (socket) => {
+        console.log('epic')
+    });
+
+    httpServer.listen(3000);
 
     let sharedPythonBuffer = "";
     let child = null;
-   
+
     function StartChild() {
         if (child != null && child?.exitCode
             == null) {
@@ -17,8 +31,7 @@ module.exports = function (RED) {
             child = null;
         }
 
-        child = spawn('python3', [path.join(__dirname,'/AudioDetectionDeamon/AudioDeamon.py')]); // ToDo: this is VERY ugly needs to be changed 
-
+        child = spawn('python3', [path.join(__dirname, '/AudioDetectionDeamon/AudioDeamon.py')]); // ToDo: this is VERY ugly needs to be changed 
         child.stdout.on('data', data => {
             sharedPythonBuffer = data.toString();
             //console.log("got Data updated SharedBuffer")
@@ -32,7 +45,7 @@ module.exports = function (RED) {
             child = null;
         });
     }
-    
+
     StartChild();
 
     function MlSelect(config) {
@@ -41,8 +54,23 @@ module.exports = function (RED) {
         var node = this;
         let metadata = JSON.parse(config.metadataJSON);
         let model = JSON.parse(config.modelJSON);
+        let weightsBin = config.weightsBin
+
+        fs.writeFile(__dirname + '/modelFolder/metadata.json', JSON.stringify(metadata), function (err) {
+            node.warn('Saved!');
+        })
+
+        fs.writeFile(__dirname + '/modelFolder/model.json', JSON.stringify(model), function (err) {
+            if (err) throw err;
+            node.warn('Saved!');
+        })
+
+        fs.writeFile(__dirname + '/modelFolder/model.weights.bin', weightsBin, function (err) {
+            if (err) throw err;
+            node.warn('Saved!');
+        })
+
         let labels = metadata.wordLabels;
-        
         function ProcessData() {
             let trigger = false;
             let files = config.files;
@@ -54,8 +82,8 @@ module.exports = function (RED) {
             let DOA = Number(Data[2])
             let volume = Number(Data[1])
             let volumechange = Number(Data[3])
-            
-           
+
+
 
             switch (config.volume) {
                 case "vloud":
@@ -95,9 +123,8 @@ module.exports = function (RED) {
                     break;
             }
             trigger = trigger && (config.class === detectedClass)
-            
-            switch(config.volume_change)
-            {
+
+            switch (config.volume_change) {
                 case "sloud":
                     trigger = trigger && (volumechange > 10)
                     break
@@ -113,11 +140,11 @@ module.exports = function (RED) {
                     trigger = trigger && true
                     break;
             }
-            let doaCheck = (((config.left === "true") && (DOA <= 180 && DOA >= 0)) || 
-            ((config.right === "true") && (DOA <= 0 && DOA >= 180)) ||
-            ((config.front === "true") && (DOA <= 60 && DOA >= 300)) ||
-            ((config.back === "true") && (DOA <= 225 && DOA >= 135)));
-            
+            let doaCheck = (((config.left === "true") && (DOA <= 180 && DOA >= 0)) ||
+                ((config.right === "true") && (DOA <= 0 && DOA >= 180)) ||
+                ((config.front === "true") && (DOA <= 60 && DOA >= 300)) ||
+                ((config.back === "true") && (DOA <= 225 && DOA >= 135)));
+
             trigger = trigger && doaCheck;
 
             if (trigger) {
@@ -126,39 +153,40 @@ module.exports = function (RED) {
 
             }
 
-    
 
 
-        node.on('input', function (msg) {
-            if (child == null || (child != null && child.exitCode != null)) {
-                node.warn("Starting a new child as it was NULL or had died!");
 
-                StartChild();
-            } else {
+            node.on('input', function (msg) {
+                if (child == null || (child != null && child.exitCode != null)) {
+                    node.warn("Starting a new child as it was NULL or had died!");
+
+                    StartChild();
+                } else {
+                    ProcessData();
+                }
+            });
+
+
+
+
+            let interfavelHandle = setInterval(() => {
+
+
+
                 ProcessData();
-            }
-        });
+
+            }, config.retrigger_window * 1000);
+
+            node.on('close', function () {
+                clearInterval(interfavelHandle)
+                config.files = []
+                volumeIndex = 0;
+
+            });
 
 
-
-
-        let interfavelHandle = setInterval(() => {
-
-
-
-            ProcessData();
-
-        }, config.retrigger_window * 1000);
-
-        node.on('close', function () {
-            clearInterval(interfavelHandle)
-            config.files = []
-            volumeIndex = 0;
-            
-        });
-
-
-    }}
+        }
+    }
 
 
 
